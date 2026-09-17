@@ -14,6 +14,13 @@ export async function buildApp(services:AppServices){
   await app.register(helmet,{contentSecurityPolicy:false});
   await app.register(cors,{origin:services.config.APP_URL,credentials:true,methods:['GET','POST','PUT','DELETE']});
   await app.register(rateLimit,{max:120,timeWindow:'1 minute'});
+  app.addHook('onRequest',async(request,reply)=>{
+    if(!['POST','PUT','PATCH','DELETE'].includes(request.method))return;
+    const origin=request.headers.origin;
+    if(origin!==services.config.APP_URL){
+      return reply.code(403).send({ok:false,error:{code:'INVALID_ORIGIN',message:'Request origin is not allowed'}});
+    }
+  });
   app.setErrorHandler((error,request,reply)=>{request.log.error({err:error},'request failed');if(error instanceof ZodError||isValidationError(error))return reply.code(400).send({ok:false,error:{code:'VALIDATION_ERROR',message:error.issues.map(i=>i.message).join('; ')}});if(isHttpError(error)&&error.statusCode<500)return reply.code(error.statusCode).send({ok:false,error:{code:'REQUEST_ERROR',message:error.message}});return reply.code(500).send({ok:false,error:{code:'INTERNAL_ERROR',message:'An internal error occurred'}});});
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({ok:false,error:{code:'NOT_FOUND',message:'Route not found'}}));
   await app.register(authPlugin);

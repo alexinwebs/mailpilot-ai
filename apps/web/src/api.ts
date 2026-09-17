@@ -16,6 +16,10 @@ export async function api<T>(
     credentials: 'include',
   });
 
+  if (response.status === 401) {
+    throw new Error('Your session expired. Refresh the page and sign in again.');
+  }
+
   const body: unknown = await response.json();
 
   if (!isApiResult<T>(body)) {

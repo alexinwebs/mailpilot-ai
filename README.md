@@ -19,12 +19,16 @@ The AI model never sends email directly. Sending is controlled by the applicatio
 - Bounded reply refinement loop
 - Deterministic automation policy engine
 - Human review queue
-- Approve and reject actions
+- Save draft edits, Edit & Approve, Approve Original, and Reject actions
 - Idempotent Gmail sending
 - Duplicate-send protection
 - Global send kill switch
 - Encrypted OAuth refresh tokens
 - Tenant-scoped API authorization
+- Trusted-origin enforcement for every state-changing API request
+- Gmail account ownership checks during OAuth
+- Atomic review transitions and concurrent-send locks
+- Gmail Message-ID reconciliation after ambiguous send failures
 - Audit history and analytics
 - Responsive React dashboard
 - PostgreSQL persistence
@@ -349,9 +353,13 @@ MailPilot includes:
 - AES-256-GCM OAuth token encryption
 - Tenant-scoped database access
 - Prompt-injection detection
+- Trusted-origin request enforcement
+- OAuth account takeover prevention
 - Deterministic send authorization
 - Global send kill switch
-- Transactional send reservation
+- Transactional send reservation and stale-lock recovery
+- Stable per-draft-version Message-IDs
+- Gmail reconciliation before retrying uncertain sends
 - Unique send and provider-message identifiers
 - Structured audit logging
 - Secret and cookie log redaction
@@ -380,7 +388,7 @@ MailPilot has been verified locally with:
 - PostgreSQL and Redis
 - Type checking, linting, tests, builds, and schema validation
 
-It is not yet presented as a fully managed production service. Public deployment still requires TLS, production secret management, managed infrastructure, monitoring, backups, OAuth verification, and deployment canaries.
+It is not yet presented as a fully managed production service. Public deployment still requires TLS, production secret management, managed infrastructure, monitoring, backups, OAuth verification, an independent security review, and deployment canaries. Keep automatic sending disabled until those controls are verified in the target environment.
 
 ## Open-source model
 
