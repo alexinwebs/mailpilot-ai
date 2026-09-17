@@ -12,6 +12,7 @@ FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app /app
+RUN chmod 755 /app/docker/entrypoint.sh
 USER node
 EXPOSE 3000
-CMD ["npm","run","start","-w","@mailpilot/backend"]
+CMD ["/app/docker/entrypoint.sh"]

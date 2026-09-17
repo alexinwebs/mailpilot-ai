@@ -1,5 +1,8 @@
 import type { ApiResult } from '@mailpilot/shared';
 
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const apiBaseUrl = configuredApiUrl?.replace(/\/+$/, '') ?? '';
+
 export async function api<T>(
   path: string,
   options?: RequestInit,
@@ -10,7 +13,7 @@ export async function api<T>(
     headers.set('content-type', 'application/json');
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
     ...options,
     headers,
     credentials: 'include',

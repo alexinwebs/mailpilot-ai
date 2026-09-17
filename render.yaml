@@ -1,0 +1,57 @@
+services:
+  - type: keyvalue
+    name: mailpilot-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+  - type: web
+    name: mailpilot-ai
+    runtime: docker
+    plan: free
+    dockerfilePath: ./docker/Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_URL
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mailpilot-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mailpilot-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: OPENAI_MODEL
+        value: openai/gpt-oss-20b
+      - key: AUTO_SEND_GLOBAL_KILL_SWITCH
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+
+databases:
+  - name: mailpilot-postgres
+    databaseName: mailpilot
+    user: mailpilot
+    plan: free

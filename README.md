@@ -409,6 +409,12 @@ See:
 - [Operations](docs/OPERATIONS.md)
 - [Security audit](docs/SECURITY_AUDIT.md)
 
+## Render deployment
+
+MailPilot can run as a single-origin Render web service that serves the React dashboard, Fastify API, and BullMQ workers. The included `render.yaml` also provisions PostgreSQL and Render Key Value.
+
+Follow the [Render deployment guide](docs/RENDER_DEPLOYMENT.md). Keep the global send kill switch enabled during the initial deployment, and use an always-on service for reliable email synchronization and queue processing.
+
 ## Project status
 
 MailPilot has been verified locally with:
