@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountStatus {
+  ACTIVE
+  REAUTH_REQUIRED
+  DISCONNECTED
+}
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  NO_REPLY
+}
+enum DraftStatus {
+  GENERATED
+  AWAITING_REVIEW
+  APPROVED
+  REJECTED
+  SENDING
+  SENT
+  FAILED
+  BLOCKED
+}
+enum PolicyOutcome {
+  AUTO_SEND
+  HUMAN_REVIEW
+  BLOCK
+}
+enum ReviewDecision {
+  APPROVE
+  REJECT
+  EDIT_AND_APPROVE
+}
+enum SendStatus {
+  RESERVED
+  SENT
+  FAILED
+  UNKNOWN
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique @db.VarChar(320)
+  name String @db.VarChar(100)
+  passwordHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  accounts EmailAccount[]
+  threads EmailThread[]
+  policies AutomationPolicy[]
+  knowledge KnowledgeItem[]
+  audits AuditLog[]
+}
+model Session {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  @@index([userId, expiresAt])
+}
+model EmailAccount {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  provider String @default("gmail")
+  providerAccountId String
+  email String @db.VarChar(320)
+  status AccountStatus @default(ACTIVE)
+  historyId String?
+  lastSyncedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  credential OAuthCredential?
+  threads EmailThread[]
+  messages EmailMessage[]
+  @@unique([provider,providerAccountId])
+  @@unique([userId,email])
+  @@index([userId,status])
+}
+model OAuthCredential {
+  id String @id @default(uuid()) @db.Uuid
+  accountId String @unique @db.Uuid
+  accessTokenEncrypted String?
+  refreshTokenEncrypted String
+  tokenExpiresAt DateTime?
+  scopes String[]
+  keyVersion Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  account EmailAccount @relation(fields:[accountId],references:[id],onDelete:Cascade)
+}
+model EmailThread {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  accountId String @db.Uuid
+  providerThreadId String
+  subject String @db.VarChar(998)
+  snippet String @default("") @db.VarChar(1000)
+  lastMessageAt DateTime
+  processingStatus ProcessingStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  account EmailAccount @relation(fields:[accountId],references:[id],onDelete:Cascade)
+  messages EmailMessage[]
+  classifications AIClassification[]
+  drafts ReplyDraft[]
+  @@unique([accountId,providerThreadId])
+  @@index([userId,lastMessageAt(sort: Desc)])
+}
+model EmailMessage {
+  id String @id @default(uuid()) @db.Uuid
+  accountId String @db.Uuid
+  threadId String @db.Uuid
+  providerMessageId String
+  internetMessageId String? @db.VarChar(998)
+  direction MessageDirection
+  fromAddress String @db.VarChar(320)
+  toAddresses String[]
+  ccAddresses String[]
+  subject String @db.VarChar(998)
+  bodyText String
+  bodyHtml String?
+  snippet String @db.VarChar(1000)
+  sentAt DateTime
+  hasAttachments Boolean @default(false)
+  rawHeaders Json
+  createdAt DateTime @default(now())
+  account EmailAccount @relation(fields:[accountId],references:[id],onDelete:Cascade)
+  thread EmailThread @relation(fields:[threadId],references:[id],onDelete:Cascade)
+  @@unique([accountId,providerMessageId])
+  @@index([threadId,sentAt])
+  @@index([internetMessageId])
+}
+model AIClassification {
+  id String @id @default(uuid()) @db.Uuid
+  threadId String @db.Uuid
+  category String
+  confidence Float
+  replyRequired Boolean
+  sensitive Boolean
+  financial Boolean
+  legal Boolean
+  security Boolean
+  injectionScore Float
+  injectionSignals String[]
+  summary String
+  rationale String
+  provider String
+  model String
+  createdAt DateTime @default(now())
+  thread EmailThread @relation(fields:[threadId],references:[id],onDelete:Cascade)
+  @@index([threadId,createdAt(sort: Desc)])
+}
+model ReplyDraft {
+  id String @id @default(uuid()) @db.Uuid
+  threadId String @db.Uuid
+  status DraftStatus @default(GENERATED)
+  subject String @db.VarChar(998)
+  bodyText String
+  version Int @default(1)
+  policyOutcome PolicyOutcome
+  policyReasons String[]
+  idempotencyKey String @unique
+  model String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  thread EmailThread @relation(fields:[threadId],references:[id],onDelete:Cascade)
+  critiques AICritique[]
+  reviews Review[]
+  sends SendAttempt[]
+  @@index([threadId,status])
+}
+model AICritique {
+  id String @id @default(uuid()) @db.Uuid
+  draftId String @db.Uuid
+  iteration Int
+  score Float
+  safe Boolean
+  factual Boolean
+  issues String[]
+  instructions String
+  createdAt DateTime @default(now())
+  draft ReplyDraft @relation(fields:[draftId],references:[id],onDelete:Cascade)
+  @@unique([draftId,iteration])
+}
+model AutomationPolicy {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  name String @db.VarChar(100)
+  enabled Boolean @default(true)
+  autoSendEnabled Boolean @default(false)
+  minConfidence Float @default(0.95)
+  allowedCategories String[]
+  blockedSenders String[]
+  maxDailySends Int @default(0)
+  priority Int @default(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  @@index([userId,enabled,priority])
+}
+model KnowledgeItem {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  title String @db.VarChar(200)
+  content String
+  tags String[]
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  @@index([userId,enabled])
+}
+model Review {
+  id String @id @default(uuid()) @db.Uuid
+  draftId String @db.Uuid
+  reviewerId String @db.Uuid
+  decision ReviewDecision
+  previousBodyHash String
+  edited Boolean
+  note String?
+  createdAt DateTime @default(now())
+  draft ReplyDraft @relation(fields:[draftId],references:[id],onDelete:Cascade)
+  @@index([reviewerId,createdAt(sort: Desc)])
+}
+model SendAttempt {
+  id String @id @default(uuid()) @db.Uuid
+  draftId String @db.Uuid
+  sendKey String @unique
+  status SendStatus
+  providerMessageId String?
+  internetMessageId String @unique
+  errorCode String?
+  attemptCount Int @default(1)
+  reservedAt DateTime @default(now())
+  sentAt DateTime?
+  updatedAt DateTime @updatedAt
+  draft ReplyDraft @relation(fields:[draftId],references:[id],onDelete:Cascade)
+  @@index([status,reservedAt])
+}
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  userId String? @db.Uuid
+  action String
+  resourceType String
+  resourceId String?
+  outcome String
+  metadata Json
+  ipHash String?
+  createdAt DateTime @default(now())
+  user User? @relation(fields:[userId],references:[id],onDelete:SetNull)
+  @@index([userId,createdAt(sort: Desc)])
+  @@index([action,createdAt(sort: Desc)])
+}
+model SystemSetting {
+  key String @id
+  value Json
+  updatedAt DateTime @updatedAt
+}

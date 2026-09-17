@@ -1,0 +1,8 @@
+import { afterAll,beforeAll,describe,expect,it } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { buildApp } from '../src/app.js';
+import { createPrisma } from '../src/db.js';
+import type { AppConfig } from '@mailpilot/config';
+const config:AppConfig={NODE_ENV:'test',PORT:3000,APP_URL:'http://localhost:5173',DATABASE_URL:'postgresql://x:x@localhost:5432/x',REDIS_URL:'redis://localhost:6379',JWT_SECRET:'12345678901234567890123456789012',ENCRYPTION_KEY:'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',GOOGLE_CLIENT_ID:'test',GOOGLE_CLIENT_SECRET:'test',GOOGLE_REDIRECT_URI:'http://localhost:3000/v1/gmail/callback',AI_PROVIDER:'mock',OPENAI_BASE_URL:'https://api.openai.com/v1',OPENAI_MODEL:'test',ANTHROPIC_MODEL:'test',AUTO_SEND_GLOBAL_KILL_SWITCH:true,LOG_LEVEL:'silent'};
+const queue={add:async()=>undefined};
+describe('API security boundary',()=>{let app:FastifyInstance;const prisma=createPrisma(config.DATABASE_URL);beforeAll(async()=>{app=await buildApp({prisma,config,syncQueue:queue,pipelineQueue:queue,sendQueue:queue})});afterAll(async()=>{await app.close();await prisma.$disconnect()});it('exposes liveness without dependencies',async()=>{const response=await app.inject({method:'GET',url:'/health'});expect(response.statusCode).toBe(200);expect(response.json()).toMatchObject({ok:true})});it('rejects unauthenticated tenant reads',async()=>{const response=await app.inject({method:'GET',url:'/v1/overview'});expect(response.statusCode).toBe(401)});it('validates registration input before database access',async()=>{const response=await app.inject({method:'POST',url:'/v1/auth/register',payload:{name:'X',email:'invalid',password:'short'}});expect(response.statusCode).toBe(400)});});

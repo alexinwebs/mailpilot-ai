@@ -1,0 +1,3 @@
+# Dependency security audit
+
+On 2026-09-17, `npm audit --audit-level=high` reported four high advisories in Prisma CLI's tooling dependency tree (`@prisma/config` → `deepmerge-ts` and `mysql2`). npm offers only a forced downgrade from Prisma 7.10 to 6.19.3, which is a breaking toolchain change; no compatible patched Prisma 7 release was available. These packages are not imported by the MailPilot API runtime and MySQL is not used. Deployment images should omit dev dependencies after generation/build. Track GHSA-ggr8-5vv4-36mx, GHSA-3f6p-5ww8-9rcr, and GHSA-rgwj-5xj2-c3m3 and upgrade Prisma when an upstream fix ships.

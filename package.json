@@ -1,0 +1,36 @@
+{
+  "name": "mailpilot-ai",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @mailpilot/backend & npm run dev -w @mailpilot/web",
+    "build": "npm run build -w @mailpilot/shared -w @mailpilot/config -w @mailpilot/backend -w @mailpilot/web",
+    "typecheck": "npm run build -w @mailpilot/shared -w @mailpilot/config && npm run typecheck -w @mailpilot/backend -w @mailpilot/web",
+    "lint": "eslint apps/backend/src apps/backend/test apps/web/src packages/shared/src packages/config/src '*.ts'",
+    "test": "vitest run",
+    "test:unit": "vitest run apps/backend/test packages/shared/src",
+    "test:integration": "vitest run apps/backend/test/api.integration.test.ts",
+    "test:e2e": "playwright test",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run db:validate",
+    "db:validate": "prisma validate --config apps/backend/prisma.config.ts",
+    "db:generate": "prisma generate --config apps/backend/prisma.config.ts",
+    "db:migrate": "prisma migrate deploy --config apps/backend/prisma.config.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.3",
+    "eslint": "^10.10.0",
+    "typescript-eslint": "^8.70.0"
+  }
+}

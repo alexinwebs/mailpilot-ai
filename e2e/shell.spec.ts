@@ -1,0 +1,1 @@
+import { test,expect } from '@playwright/test';test('shows secure authentication shell',async({page})=>{await page.goto('/');await expect(page.getByText('MailPilot AI')).toBeVisible();await expect(page.getByText('Security-first email assistance')).toBeVisible();});

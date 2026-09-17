@@ -1,0 +1,4 @@
+import type { AIContext,AIProvider } from './provider.js';
+import type { Critique,GeneratedReply } from '@mailpilot/shared';
+export interface RefinementResult { reply:GeneratedReply;critiques:Critique[];iterations:number }
+export async function refineReply(provider:AIProvider,context:AIContext,maxIterations=3):Promise<RefinementResult>{if(maxIterations<1||maxIterations>3)throw new Error('Refinement iterations must be 1..3');let reply=await provider.generate(context);const critiques:Critique[]=[];for(let i=0;i<maxIterations;i+=1){const critique=await provider.critique(context,reply);critiques.push(critique);if(critique.score>=0.9&&critique.safe&&critique.factual)return {reply,critiques,iterations:i+1};if(i<maxIterations-1)reply=await provider.improve(context,reply,critique);}return {reply,critiques,iterations:critiques.length};}
