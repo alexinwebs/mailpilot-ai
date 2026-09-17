@@ -81,6 +81,39 @@ Audit log
 
 The LLM can classify, generate, critique, and recommend. It cannot directly authorize an email send.
 
+## Knowledge base
+
+The Knowledge section provides trusted user context for email classification and reply generation.
+
+Useful entries include:
+
+- Your role, company, and professional background
+- Products, services, pricing, and support policies
+- Frequently asked questions
+- Working hours and timezone
+- Preferred writing style and email signature
+
+### Current behavior
+
+MailPilot loads up to eight enabled knowledge items belonging to the authenticated user. It selects the most recently updated entries and provides their titles and content to the configured AI provider.
+
+The current version does not use semantic search, embeddings, or keyword relevance ranking. Tags are stored but are not currently used for retrieval.
+
+Knowledge cannot override MailPilot's authorization checks, deterministic policy engine, human-review requirements, prompt-injection controls, or sending safeguards.
+
+### Privacy
+
+Do not store passwords, API keys, OAuth credentials, payment information, encryption keys, identity documents, or other highly sensitive information in Knowledge.
+
+Knowledge content may be transmitted to the configured AI provider during email processing. Review that provider's privacy and retention policies before adding confidential information.
+
+### Testing Knowledge
+
+1. Add an entry describing your role or business.
+2. Send a harmless email asking about that information.
+3. Review the generated reply.
+4. Confirm that it uses the stored information accurately.
+
 ## Technology
 
 ### Frontend
