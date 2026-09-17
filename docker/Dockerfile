@@ -7,7 +7,7 @@ COPY packages/shared/package.json packages/shared/package.json
 COPY packages/config/package.json packages/config/package.json
 RUN npm ci
 COPY . .
-RUN npm run db:generate && npm run build
+RUN DATABASE_URL=postgresql://mailpilot:mailpilot@localhost:5432/mailpilot npm run db:generate && npm run build
 FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production

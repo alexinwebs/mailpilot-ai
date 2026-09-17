@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+dist
+**/dist
+apps/backend/src/generated
+coverage
+test-results
+playwright-report
+*.log
+*.tsbuildinfo
+mailpilot-*.zip
+.DS_Store
