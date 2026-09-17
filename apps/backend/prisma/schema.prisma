@@ -82,6 +82,7 @@ model EmailAccount {
   email String @db.VarChar(320)
   status AccountStatus @default(ACTIVE)
   historyId String?
+  watchExpiresAt DateTime?
   lastSyncedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -92,6 +93,7 @@ model EmailAccount {
   @@unique([provider,providerAccountId])
   @@unique([userId,email])
   @@index([userId,status])
+  @@index([status,watchExpiresAt])
 }
 model OAuthCredential {
   id String @id @default(uuid()) @db.Uuid

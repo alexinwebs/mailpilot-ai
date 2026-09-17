@@ -10,6 +10,7 @@ import { ZodError } from 'zod';
 import authPlugin from './auth/plugin.js';
 import { authRoutes } from './routes/auth.js';
 import { gmailRoutes } from './routes/gmail.js';
+import { gmailPushRoutes } from './routes/gmail-push.js';
 import { appRoutes } from './routes/app.js';
 import type { AppServices } from './types.js';
 export async function buildApp(services:AppServices){
@@ -22,7 +23,7 @@ export async function buildApp(services:AppServices){
   await app.register(cors,{origin:services.config.APP_URL,credentials:true,methods:['GET','POST','PUT','DELETE']});
   await app.register(rateLimit,{max:120,timeWindow:'1 minute'});
   app.addHook('onRequest',async(request,reply)=>{
-    if(!['POST','PUT','PATCH','DELETE'].includes(request.method))return;
+    if(!['POST','PUT','PATCH','DELETE'].includes(request.method)||request.url==='/v1/gmail/push')return;
     const origin=request.headers.origin;
     if(origin!==services.config.APP_URL){
       return reply.code(403).send({ok:false,error:{code:'INVALID_ORIGIN',message:'Request origin is not allowed'}});
@@ -34,6 +35,7 @@ export async function buildApp(services:AppServices){
   app.get('/ready',async(_request,reply)=>{try{await services.prisma.$queryRaw`SELECT 1`;return {ok:true,data:{status:'ready'}};}catch{return reply.code(503).send({ok:false,error:{code:'NOT_READY',message:'Database unavailable'}});}});
   await app.register(authRoutes,{prefix:'/v1/auth'});
   await app.register(gmailRoutes,{prefix:'/v1/gmail'});
+  await app.register(gmailPushRoutes,{prefix:'/v1/gmail'});
   await app.register(appRoutes,{prefix:'/v1'});
   if(servesWeb){
     await app.register(fastifyStatic,{root:webRoot,prefix:'/'});

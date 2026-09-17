@@ -10,6 +10,7 @@ The AI model never sends email directly. Sending is controlled by the applicatio
 
 - Gmail OAuth 2.0 connection
 - Recurring Gmail synchronization
+- Authenticated Gmail Pub/Sub push notifications with automatic watch renewal
 - Email normalization and thread reconstruction
 - AI-powered email classification
 - Reply-required detection
@@ -407,6 +408,7 @@ See:
 - [Security](SECURITY.md)
 - [Testing](TESTING.md)
 - [Operations](docs/OPERATIONS.md)
+- [Gmail Pub/Sub](docs/GMAIL_PUBSUB.md)
 - [Security audit](docs/SECURITY_AUDIT.md)
 
 ## Render deployment
