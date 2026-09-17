@@ -4,7 +4,8 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ZodError } from 'zod';
 import authPlugin from './auth/plugin.js';
 import { authRoutes } from './routes/auth.js';
@@ -13,7 +14,7 @@ import { appRoutes } from './routes/app.js';
 import type { AppServices } from './types.js';
 export async function buildApp(services:AppServices){
   const isProduction=services.config.NODE_ENV==='production';
-  const webRoot=resolve(process.cwd(),'apps/web/dist');
+  const webRoot=resolve(dirname(fileURLToPath(import.meta.url)),'../../web/dist');
   const servesWeb=isProduction&&existsSync(webRoot);
   const app=Fastify({logger:{level:services.config.LOG_LEVEL,redact:['req.headers.authorization','req.headers.cookie','res.headers.set-cookie']},bodyLimit:1_000_000,trustProxy:isProduction});
   app.decorate('services',services);
