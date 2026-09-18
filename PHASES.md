@@ -15,8 +15,9 @@
 - [x] 12 Dashboard and operational UI
 - [x] 13 Audit, analytics and settings APIs
 - [x] 14 Unit/API test suite and security checks
-- [ ] 15 Live PostgreSQL/Redis/Gmail integration canary (environment blocked: Docker and credentials unavailable)
+- [x] 15 Live PostgreSQL/Redis/Gmail integration canary (completed on Render with real Gmail OAuth, real synchronization, and real Groq inference; local dev-container credentials remain separately environment-blocked)
 - [x] 16 Browser E2E verification
-- [ ] 17 Production deployment canary (audit performed; upstream Prisma CLI advisories documented)
+- [x] 17 Production deployment canary (deployed to Render; real Gmail message received, drafted, edited, approved, and sent to an external inbox; upstream Prisma CLI advisories remain documented and unresolved)
+- [x] 18 Gmail Pub/Sub push ingestion (authenticated via Google-signed OIDC identity token; falls back to polling when unconfigured)
 
-A phase is checked only where code and local verification exist. Environment-dependent phases remain explicit.
+A phase is checked only where code and live verification exist. Multi-user production readiness (persistent Redis, separated worker process, monitoring, independent security review) remains open and is tracked outside this phase list.
