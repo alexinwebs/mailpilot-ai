@@ -348,6 +348,8 @@ AUTO_SEND_GLOBAL_KILL_SWITCH=false
 
 Restart the backend after changing the value. Keep automatic sending disabled until the complete review flow has been tested using a dedicated Gmail account.
 
+On Render, this variable lives in the service's Environment tab rather than a local `.env` file. Render redeploys apply the saved value immediately, and the variable does not reset itself between deploys — but treat `false` as a temporary, supervised state: enable it only to test one approved draft, confirm the send, then set it back to `true` and redeploy before leaving the service unattended.
+
 ## Verification
 
 Run all primary checks:
@@ -417,19 +419,37 @@ MailPilot can run as a single-origin Render web service that serves the React da
 
 Follow the [Render deployment guide](docs/RENDER_DEPLOYMENT.md). Keep the global send kill switch enabled during the initial deployment, and use an always-on service for reliable email synchronization and queue processing.
 
+This configuration has been verified on a live Render deployment, including real Gmail OAuth, real Gmail message ingestion, real Groq-generated drafts, human review, and a real approved Gmail send to an external inbox.
+
+### Faster ingestion with Gmail Pub/Sub
+
+By default, MailPilot polls Gmail on a fixed interval. Once deployed to a public HTTPS endpoint, it can optionally use [Gmail Pub/Sub push notifications](docs/GMAIL_PUBSUB.md) instead, which typically delivers new messages within a few seconds rather than waiting for the next poll.
+
+This requires three variables to be set together:
+
+```env
+GMAIL_PUBSUB_TOPIC=projects/<project-id>/topics/<topic-name>
+GMAIL_PUBSUB_AUDIENCE=https://<your-app>.onrender.com/v1/gmail/push
+GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL=<push-service-account>@<project-id>.iam.gserviceaccount.com
+```
+
+Setup involves creating a Pub/Sub topic, granting Gmail's system service account (`gmail-api-push@system.gserviceaccount.com`) publish access, and creating an authenticated push subscription pointed at `/v1/gmail/push`. See the [Gmail Pub/Sub guide](docs/GMAIL_PUBSUB.md) for the full walkthrough.
+
+Every push notification is verified against Google's signed OIDC identity token before it is trusted, and duplicate notifications are ignored using Gmail history IDs. If these three variables are left unset, MailPilot falls back to periodic polling automatically — no code changes are needed either way.
+
 ## Project status
 
-MailPilot has been verified locally with:
+MailPilot has been verified both locally and on a live Render deployment with:
 
-- Real Gmail OAuth
-- Recurring Gmail synchronization
-- Real Groq classification and reply generation
-- Human review
-- Real Gmail sending
-- PostgreSQL and Redis
-- Type checking, linting, tests, builds, and schema validation
+- Real Gmail OAuth, including the production redirect URI
+- Gmail synchronization via periodic polling and optional Pub/Sub push notifications
+- Real Groq classification, explicit reply-required detection, and reply generation
+- Human review, including Edit & Approve
+- Real Gmail sending to an external inbox, confirmed end to end
+- PostgreSQL and Redis (Render's free Key Value tier does not persist data; see the deployment guide)
+- Type checking, linting, automated tests, builds, and schema validation, both locally and in the Render build
 
-It is not yet presented as a fully managed production service. Public deployment still requires TLS, production secret management, managed infrastructure, monitoring, backups, OAuth verification, an independent security review, and deployment canaries. Keep automatic sending disabled until those controls are verified in the target environment.
+It is not yet presented as an unattended, multi-user production service. Before opening it to other users, it still needs persistent Redis, separated API and worker processes, monitoring and alerting, verified backups, Google OAuth verification for restricted scopes, and an independent security review. Keep the global send kill switch enabled by default, and only disable it briefly and deliberately to test a specific approved draft.
 
 ## Open-source model
 
