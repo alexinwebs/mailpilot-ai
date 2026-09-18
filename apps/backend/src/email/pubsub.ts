@@ -10,7 +10,7 @@ export const pushEnvelopeSchema = z.object({
 
 const notificationSchema = z.object({
   emailAddress: z.email(),
-  historyId: z.string().regex(/^\d+$/),
+  historyId: z.coerce.string().regex(/^\d+$/),
 });
 
 export function decodeGmailNotification(data: string): {
